@@ -1,74 +1,191 @@
 pipeline {
+
     agent any
+ 
+    tools {
+
+        maven 'Apache Maven 3.8.7'
+
+    }
+ 
+    environment {
+
+        IMAGE_NAME = 'pradeep781/medicure:1.0'
+
+        KUBECONFIG = '/path/to/kubeconfig' // Add your actual kubeconfig path here
+
+    }
+ 
     stages {
-        stage('Checkout') {
+
+        stage('Git Checkout') {
+
             steps {
-                echo "checked out"
-                sleep(time: 800, unit: 'MILLISECONDS') // Pauses for 15 seconds
+
+                echo 'Cloning the Git repository'
+
+                git branch: 'master', url: 'https://github.com/Pradeep-kumar11/start-agile-health-care'
+
             }
+
         }
  
-        stage('Build') {
+        stage('Maven Build & Test') {
+
             steps {
-                echo "code compiled"
-                sleep(time: 5000, unit: 'MILLISECONDS') // Pauses for 15 seconds
+
+                echo 'Building the application and running tests using Maven'
+
+                sh 'mvn clean package test'
+
             }
+
         }
  
-        stage('Test') {
+        stage('Test Results') {
+
             steps {
-                echo "maven test"
-                sleep(time: 13000, unit: 'MILLISECONDS') // Pauses for 15 seconds
+
+                echo 'Publishing test results'
+
+                script {
+
+                    try {
+
+                        sh 'mvn surefire-report:report-only'
+
+                        publishHTML([
+
+                            reportDir: 'target/site/surefire-report',
+
+                            reportFiles: 'index.html',
+
+                            reportName: 'Test Report'
+
+                        ])
+
+                    } catch (Exception e) {
+
+                        echo "Skipping test report: ${e.message}"
+
+                    }
+
+                }
+
             }
-        }
- 
-        stage('Package') {
-            steps {
-                echo "packaging your code"
-                sleep(time: 1500, unit: 'MILLISECONDS') // Pauses for 15 seconds
-            }
-        }
- 
-        stage('Provision Test Infrastructure') {
-            steps {
-                echo "provisioning test infrastructure"
-                sleep(time: 25000, unit: 'MILLISECONDS') // Pauses for 15 seconds
-            }
-        }
- 
-        stage('Configure Servers') {
-            steps {
-                echo "configuring servers"
-                sleep(time: 1000, unit: 'MILLISECONDS') // Pauses for 15 seconds
-            }
+
         }
  
         stage('Docker Build') {
+
             steps {
-                echo "built the docker image"
-                sleep(time: 15000, unit: 'MILLISECONDS') // Pauses for 15 seconds
+
+                echo 'Building Docker image'
+
+                sh "docker build -t $IMAGE_NAME ."
+
             }
+
         }
  
-        stage('Deploy to Test') {
+        stage('Docker Login') {
+
             steps {
-                echo "deployed the test phase"
-                sleep(time: 14000, unit: 'MILLISECONDS') // Pauses for 15 seconds
+
+                withCredentials([usernamePassword(credentialsId: 'dockercode', usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
+
+                    echo 'Logging in to DockerHub...'
+
+                    script {
+
+                        retry(3) {
+
+                            try {
+
+                                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
+
+                            } catch (Exception e) {
+
+                                echo "DockerHub login failed, retrying in 10 seconds..."
+
+                                sleep 10
+
+                                throw e
+
+                            }
+
+                        }
+
+                    }
+
+                }
+
             }
+
         }
  
-        stage('Deploy to Production') {
+        stage('Push Docker Image') {
+
             steps {
-                echo "deployed the production phase"
-                sleep(time: 16000, unit: 'MILLISECONDS') // Pauses for 15 seconds
+
+                echo 'Pushing Docker image to DockerHub'
+
+                script {
+
+                    retry(3) {
+
+                        sh "docker push $IMAGE_NAME"
+
+                    }
+
+                }
+
             }
+
         }
  
-        stage('Setup Monitoring') {
+        stage('Run Ansible Playbook') {
+
             steps {
-                echo "monitoring"
-                sleep(time: 20000, unit: 'MILLISECONDS') // Pauses for 15 seconds
+
+                echo 'Executing Ansible Playbook for deployment'
+
+                script {
+
+                    try {
+
+                        ansiblePlaybook become: true, credentialsId: 'ansible', disableHostKeyChecking: true, installation: 'ansible', inventory: '/etc/ansible/hosts', playbook: 'deploy.yml'
+
+                    } catch (Exception e) {
+
+                        echo "Ansible deployment failed: ${e.message}"
+
+                    }
+
+                }
+
             }
+
         }
+ 
     }
+ 
+    post {
+
+        success {
+
+            echo 'Build and deployment completed successfully!'
+
+        }
+
+        failure {
+
+            echo 'Build failed! Please check the logs.'
+
+        }
+
+    }
+
 }
+
+ 
