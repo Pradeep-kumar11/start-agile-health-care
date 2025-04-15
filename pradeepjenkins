@@ -94,12 +94,14 @@ pipeline {
                 echo 'Executing Ansible Playbook for deployment'
                 script {
                     try {
-                        ansiblePlaybook become: true, 
+                        ansiblePlaybook(
+                            become: true, 
                             credentialsId: 'ansible', 
                             disableHostKeyChecking: true, 
                             installation: 'ansible', 
                             inventory: "$WORKSPACE/inventory", 
                             playbook: 'ansible-playbook.yml'
+                        )
                     } catch (Exception e) {
                         echo "Ansible deployment failed: ${e.message}"
                     }
