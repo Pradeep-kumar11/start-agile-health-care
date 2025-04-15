@@ -94,8 +94,6 @@ pipeline {
                 echo 'Executing Ansible Playbook for deployment'
                 withCredentials([sshUserPrivateKey(credentialsId: 'ec2-key', keyFileVariable: 'PRIVATE_KEY', usernameVariable: 'SSH_USER')]) {
                     script {
-                        // Copy inventory file to workspace
-                        sh 'cp /var/lib/jenkins/inventory $WORKSPACE/'
                         // Set correct permissions for the SSH private key
                         sh 'chmod 400 $PRIVATE_KEY'
                         // Run the ansible playbook
