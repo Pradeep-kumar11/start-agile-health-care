@@ -2,7 +2,6 @@
   hosts: all
   become: true
   connection: ssh
-
   tasks:
     - name: Update apt repositories
       apt:
@@ -21,4 +20,3 @@
 
     - name: Run Docker container
       command: docker run -itd -p 8084:8082 pradeep781/medicure:1.0
-
