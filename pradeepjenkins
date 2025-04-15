@@ -89,22 +89,20 @@ pipeline {
             }
         }
 
+        // ✅ Updated Ansible Playbook stage here
         stage('Run Ansible Playbook') {
             steps {
                 echo 'Executing Ansible Playbook for deployment'
-                script {
-                    try {
-                        ansiblePlaybook(
-                            become: true, 
-                            credentialsId: 'ansible', 
-                            disableHostKeyChecking: true, 
-                            installation: 'ansible', 
-                            inventory: "$WORKSPACE/inventory",  // Updated path
-                            playbook: 'ansible-playbook.yml'
-                        )
-                    } catch (Exception e) {
-                        echo "Ansible deployment failed: ${e.message}"
-                    }
+                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-key', keyFileVariable: 'PRIVATE_KEY', usernameVariable: 'SSH_USER')]) {
+                    sh 'cp /var/lib/jenkins/inventory $WORKSPACE/'
+                    sh 'chmod 400 $PRIVATE_KEY'
+                    sh """
+                        ansible-playbook ansible-playbook.yml \
+                        -i $WORKSPACE/inventory \
+                        --private-key $PRIVATE_KEY \
+                        -u $SSH_USER \
+                        --become --ssh-common-args='-o StrictHostKeyChecking=no'
+                    """
                 }
             }
         }
