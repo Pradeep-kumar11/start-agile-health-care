@@ -85,7 +85,7 @@ pipeline {
         stage('Copy Inventory') {
             steps {
                 echo 'Copying inventory file to Jenkins workspace'
-                sh 'cp /home/ubuntu/inventory $WORKSPACE/'
+                sh 'cp /var/lib/jenkins/inventory $WORKSPACE/'
             }
         }
 
@@ -99,7 +99,7 @@ pipeline {
                             credentialsId: 'ansible', 
                             disableHostKeyChecking: true, 
                             installation: 'ansible', 
-                            inventory: "$WORKSPACE/inventory", 
+                            inventory: "$WORKSPACE/inventory",  // Updated path
                             playbook: 'ansible-playbook.yml'
                         )
                     } catch (Exception e) {
