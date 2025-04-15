@@ -23,24 +23,19 @@ pipeline {
         stage('Maven Build & Test') {
             steps {
                 echo 'Building the application and running tests using Maven'
-                sh 'mvn clean package test'
+                sh 'mvn clean package test surefire-report:report'
             }
         }
 
-        stage('Test Results') {
+        stage('Publish Test Report') {
             steps {
                 echo 'Publishing test results'
                 script {
-                    try {
-                        sh 'mvn surefire-report:report-only'
-                        publishHTML([
-                            reportDir: 'target/site/surefire-report',
-                            reportFiles: 'index.html',
-                            reportName: 'Test Report'
-                        ])
-                    } catch (Exception e) {
-                        echo "Skipping test report: ${e.message}"
-                    }
+                    publishHTML([
+                        reportDir: 'target/site',
+                        reportFiles: 'surefire-report.html',
+                        reportName: 'Test Report'
+                    ])
                 }
             }
         }
@@ -58,13 +53,7 @@ pipeline {
                     echo 'Logging in to DockerHub...'
                     script {
                         retry(3) {
-                            try {
-                                sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
-                            } catch (Exception e) {
-                                echo "DockerHub login failed, retrying in 10 seconds..."
-                                sleep 10
-                                throw e
-                            }
+                            sh 'echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin'
                         }
                     }
                 }
@@ -99,7 +88,7 @@ pipeline {
                             credentialsId: 'ansible', 
                             disableHostKeyChecking: true, 
                             installation: 'ansible', 
-                            inventory: "$WORKSPACE/inventory",  // Updated path
+                            inventory: "$WORKSPACE/inventory",  
                             playbook: 'ansible-playbook.yml'
                         )
                     } catch (Exception e) {
@@ -108,7 +97,6 @@ pipeline {
                 }
             }
         }
-
     }
 
     post {
