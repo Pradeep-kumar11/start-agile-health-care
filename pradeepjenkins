@@ -1,5 +1,4 @@
 pipeline {
-
     agent any
 
     tools {
@@ -33,7 +32,7 @@ pipeline {
                 script {
                     try {
                         sh 'mvn surefire-report:report-only'
-                        publishHTML([
+                        publishHTML([ 
                             reportDir: 'target/site/surefire-report',
                             reportFiles: 'index.html',
                             reportName: 'Test Report'
@@ -94,15 +93,20 @@ pipeline {
             steps {
                 echo 'Executing Ansible Playbook for deployment'
                 withCredentials([sshUserPrivateKey(credentialsId: 'ec2-key', keyFileVariable: 'PRIVATE_KEY', usernameVariable: 'SSH_USER')]) {
-                    sh 'cp /var/lib/jenkins/inventory $WORKSPACE/'
-                    sh 'chmod 400 $PRIVATE_KEY'
-                    sh """
-                        ansible-playbook ansible-playbook.yml \
-                        -i $WORKSPACE/inventory \
-                        --private-key $PRIVATE_KEY \
-                        -u $SSH_USER \
-                        --become --ssh-common-args='-o StrictHostKeyChecking=no'
-                    """
+                    script {
+                        // Copy inventory file to workspace
+                        sh 'cp /var/lib/jenkins/inventory $WORKSPACE/'
+                        // Set correct permissions for the SSH private key
+                        sh 'chmod 400 $PRIVATE_KEY'
+                        // Run the ansible playbook
+                        sh """
+                            ansible-playbook ansible-playbook.yml \
+                            -i $WORKSPACE/inventory \
+                            --private-key $PRIVATE_KEY \
+                            -u $SSH_USER \
+                            --become --ssh-common-args='-o StrictHostKeyChecking=no'
+                        """
+                    }
                 }
             }
         }
