@@ -24,7 +24,7 @@ pipeline {
 
                 echo 'Cloning the Git repository'
 
-                git branch: 'master', url: 'https://github.com/Pradeep-kumar11/star-agile-health-care'
+                git branch: 'master', url: 'https://github.com/Pradeep-kumar11/star-agile-health-care.git'
 
             }
 
