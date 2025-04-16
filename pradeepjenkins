@@ -81,25 +81,19 @@ pipeline {
             }
         }
 
-        stage('Copy Inventory') {
-            steps {
-                echo 'Copying inventory file to Jenkins workspace'
-                sh 'cp /var/lib/jenkins/inventory $WORKSPACE/'
-            }
-        }
+        // 🔥 Removed the copy stage — not needed anymore
 
-        // ✅ Updated Ansible Playbook stage here
         stage('Run Ansible Playbook') {
             steps {
                 echo 'Executing Ansible Playbook for deployment'
                 withCredentials([sshUserPrivateKey(credentialsId: 'ec2-key', keyFileVariable: 'PRIVATE_KEY', usernameVariable: 'SSH_USER')]) {
                     script {
-                        // Set correct permissions for the SSH private key
+                        // Set permissions for the SSH private key
                         sh 'chmod 400 $PRIVATE_KEY'
-                        // Run the ansible playbook
+                        // Run ansible playbook using the inventory file from repo
                         sh """
                             ansible-playbook ansible-playbook.yml \
-                            -i $WORKSPACE/inventory \
+                            -i ansible/inventory \
                             --private-key $PRIVATE_KEY \
                             -u $SSH_USER \
                             --become --ssh-common-args='-o StrictHostKeyChecking=no'
