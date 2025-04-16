@@ -92,7 +92,7 @@ pipeline {
                     credentialsId: 'ansible',
                     disableHostKeyChecking: true,
                     installation: 'ansible',
-                    inventory: 'inventory', // Use the inventory file from the repository
+                    inventory: '/etc/ansible/hosts',
                     playbook: 'ansible-playbook.yml'
                 )
             }
