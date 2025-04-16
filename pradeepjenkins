@@ -84,23 +84,17 @@ pipeline {
         // Removed the 'Copy Inventory' stage
         // Since the inventory file is already in the Git repository, we don't need to copy it
 
-        stage('Run Ansible Playbook') {
+        stage('Deploy Using Ansible') {
             steps {
-                echo 'Executing Ansible Playbook for deployment'
-                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-key', keyFileVariable: 'PRIVATE_KEY', usernameVariable: 'SSH_USER')]) {
-                    script {
-                        // Set correct permissions for the SSH private key
-                        sh 'chmod 400 $PRIVATE_KEY'
-                        // Run the ansible playbook
-                        sh """
-                            ansible-playbook ansible-playbook.yml \
-                            -i inventory \  // Directly use the inventory file in the repository
-                            --private-key $PRIVATE_KEY \
-                            -u $SSH_USER \
-                            --become --ssh-common-args='-o StrictHostKeyChecking=no'
-                        """
-                    }
-                }
+                echo 'Deploying application using Ansible playbook...'
+                ansiblePlaybook(
+                    become: true,
+                    credentialsId: 'ansible',
+                    disableHostKeyChecking: true,
+                    installation: 'ansible',
+                    inventory: 'inventory', // Use the inventory file from the repository
+                    playbook: 'ansible-playbook.yml'
+                )
             }
         }
 
@@ -108,10 +102,4 @@ pipeline {
 
     post {
         success {
-            echo 'Build and deployment completed successfully!'
-        }
-        failure {
-            echo 'Build failed! Please check the logs.'
-        }
-    }
-}
+            echo 'Build
