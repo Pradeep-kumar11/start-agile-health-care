@@ -102,4 +102,10 @@ pipeline {
 
     post {
         success {
-            echo 'Build
+            echo 'Build and deployment completed successfully!'
+        }
+        failure {
+            echo 'Build failed! Please check the logs.'
+        }
+    }
+}
