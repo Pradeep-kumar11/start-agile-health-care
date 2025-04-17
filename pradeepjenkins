@@ -91,7 +91,7 @@ pipeline {
                             inventory: '/etc/ansible/hosts',
                             playbook: 'ansible-playbook.yml'
                         )
-                    } catch (Exception e) {
+                    }  {
                         echo "Ansible playbook execution failed: ${e.message}"
                         throw e
                     }
