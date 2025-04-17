@@ -1,18 +1,26 @@
-- name: Configure Docker and deploy Medicure container
+- name: Configure Docker on EC2 Instances for Healthcare Project
   hosts: all
   become: true
+  connection: ssh
   tasks:
-    - name: Update apt packages
-      command: sudo apt update
+    - name: Update apt repositories
+      apt:
+        update_cache: yes
 
-    - name: Install Python3-pip
-      command: sudo apt install -y python3-pip
+    - name: Remove containerd.io to resolve conflicts
+      command: sudo apt-get remove -y containerd.io
+      ignore_errors: yes  # In case it's not installed, continue without failing
 
     - name: Install Docker
-      command: sudo apt-get install -y docker.io
+      apt:
+        name: docker.io
+        state: present
 
-    - name: Start Docker service
-      command: sudo systemctl start docker
+    - name: Start and Enable Docker service
+      service:
+        name: docker
+        state: started
+        enabled: yes
 
-    - name: Deploy Medicure container from Docker Hub
+    - name: Run Medicure Docker container
       command: docker run -itd -p 8084:8082 pradeep781/medicure:1.0
