@@ -1,22 +1,24 @@
-- name: Configure Docker on EC2 Instances
+---
+- name: Configure Docker on Deploy Server
   hosts: all
   become: true
-  connection: ssh
   tasks:
     - name: Update apt repositories
-      apt:
-        update_cache: yes
+      command: apt update
+
+    - name: Install Python and pip
+      command: apt install -y python3-pip
 
     - name: Install Docker
-      apt:
-        name: docker.io
-        state: present
+      command: apt-get install -y docker.io
 
-    - name: Start and Enable Docker service
-      service:
-        name: docker
-        state: started
-        enabled: yes
+    - name: Start Docker service
+      command: systemctl start docker
 
-    - name: Run Docker container
+    - name: Remove existing Medicure container (if any)
+      command: >
+        docker rm -f $(docker ps -aq --filter "ancestor=pradeep781/medicure:1.0")
+      ignore_errors: yes
+
+    - name: Run new Docker container for Medicure
       command: docker run -itd -p 8084:8082 pradeep781/medicure:1.0
