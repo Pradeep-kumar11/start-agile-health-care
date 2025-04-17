@@ -26,24 +26,6 @@ pipeline {
             }
         }
 
-        stage('Test Results') {
-            steps {
-                echo 'Publishing test results'
-                script {
-                    try {
-                        sh 'mvn surefire-report:report-only'
-                        publishHTML([ 
-                            reportDir: 'target/site/surefire-report',
-                            reportFiles: 'index.html',
-                            reportName: 'Test Report'
-                        ])
-                    } catch (Exception e) {
-                        echo "Skipping test report: ${e.message}"
-                    }
-                }
-            }
-        }
-
         stage('Docker Build') {
             steps {
                 echo 'Building Docker image'
