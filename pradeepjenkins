@@ -47,7 +47,14 @@ pipeline {
         stage('Docker Build') {
             steps {
                 echo 'Building Docker image'
-                sh "docker build -t $IMAGE_NAME ."
+                script {
+                    try {
+                        sh "docker build -t $IMAGE_NAME ."
+                    } catch (Exception e) {
+                        echo "Docker build failed: ${e.message}"
+                        throw e
+                    }
+                }
             }
         }
 
@@ -75,7 +82,12 @@ pipeline {
                 echo 'Pushing Docker image to DockerHub'
                 script {
                     retry(3) {
-                        sh "docker push $IMAGE_NAME"
+                        try {
+                            sh "docker push $IMAGE_NAME"
+                        } catch (Exception e) {
+                            echo "Docker push failed: ${e.message}"
+                            throw e
+                        }
                     }
                 }
             }
@@ -87,14 +99,21 @@ pipeline {
         stage('Deploy Using Ansible') {
             steps {
                 echo 'Deploying application using Ansible playbook...'
-                ansiblePlaybook(
-                    become: true,
-                    credentialsId: 'ansible',
-                    disableHostKeyChecking: true,
-                    installation: 'ansible',
-                    inventory: '/etc/ansible/hosts',
-                    playbook: 'ansible-playbook.yml'
-                )
+                script {
+                    try {
+                        ansiblePlaybook(
+                            become: true,
+                            credentialsId: 'ansible',
+                            disableHostKeyChecking: true,
+                            installation: 'ansible',
+                            inventory: '/etc/ansible/hosts',
+                            playbook: 'ansible-playbook.yml'
+                        )
+                    } catch (Exception e) {
+                        echo "Ansible playbook execution failed: ${e.message}"
+                        throw e
+                    }
+                }
             }
         }
 
